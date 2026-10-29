@@ -26,6 +26,7 @@ export default function SakkizSinf() {
       icon: "⚙️",
       nom: "STEAM topshirig‘i",
       izoh: "Bilimlaringizni amaliy va ijodiy loyihalarda qo‘llang",
+      link: "/sinflar/8-sinf/steam",
     },
     {
       icon: "🏆",
