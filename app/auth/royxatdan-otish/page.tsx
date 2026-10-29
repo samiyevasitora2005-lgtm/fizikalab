@@ -47,13 +47,12 @@ export default function RoyxatdanOtish() {
       });
 
       if (error) {
-        setXabar("Xatolik: " + error.message);
-      } else {
-        setXabar(
-          "Ro‘yxatdan o‘tish so‘rovi yuborildi. " +
-          "Emailingizni tekshiring va tasdiqlash havolasini bosing."
-        );
-      }
+  setXabar("Xatolik: " + error.message);
+} else {
+  setXabar("Muvaffaqiyatli ro‘yxatdan o‘tdingiz!");
+
+  window.location.href = "/sinflar";
+}
     } catch {
       setXabar("Ulanishda xatolik yuz berdi.");
     } finally {
