@@ -20,7 +20,8 @@ export default function SakkizSinf() {
       icon: "📝",
       nom: "Mavzuga doir topshiriqlar",
       izoh: "O‘rgangan mavzularingiz bo‘yicha topshiriqlarni bajaring",
-    },
+   link: "/sinflar/8-sinf/mavzuga-doir-topshiriqlar",
+},
     {
       icon: "⚙️",
       nom: "STEAM topshirig‘i",
