@@ -6,431 +6,380 @@ import { useState } from "react";
 const savollar = [
   {
     savol: "Shar jun matoga ishqalanganda qanday zaryadlanadi?",
-    variantlar: ["Musbat", "Manfiy", "Zaryadsiz"],
+    variantlar: [
+      "Musbat zaryadlanadi",
+      "Manfiy zaryadlanadi",
+      "Zaryadsiz qoladi",
+      "Magnitga aylanadi",
+    ],
     javob: 1,
   },
   {
-    savol: "Ishqalanishda qaysi zarralar almashinadi?",
-    variantlar: ["Protonlar", "Neytronlar", "Elektronlar"],
+    savol: "Ishqalanish vaqtida qaysi zarrachalar o'tadi?",
+    variantlar: ["Protonlar", "Neytronlar", "Elektronlar", "Atom yadrolari"],
     javob: 2,
   },
   {
-    savol: "Zaryadlangan shar nima uchun qog‘ozni tortadi?",
+    savol: "Nega zaryadlangan shar qog'oz bo'laklarini tortadi?",
     variantlar: [
-      "Qog‘oz qutblangani uchun",
-      "Qog‘oz magnitlangani uchun",
-      "Qog‘oz og‘irlashgani uchun",
+      "Gravitatsiya kuchi ortadi",
+      "Qog'oz qiziydi",
+      "Qog'ozda zaryadlar qayta taqsimlanadi",
+      "Shar magnitga aylanadi",
     ],
-    javob: 0,
+    javob: 2,
   },
   {
     savol: "Shar ishqalanmasa, odatda nima kuzatiladi?",
     variantlar: [
-      "Kuchli tortilish",
-      "Sezilarli tortilish bo‘lmasligi mumkin",
-      "Qog‘oz yonadi",
+      "Qog'oz kuchli tortiladi",
+      "Sezilarli elektrostatik tortishish bo'lmaydi",
+      "Qog'oz yonadi",
+      "Shar o'z-o'zidan zaryadlanadi",
     ],
     javob: 1,
   },
   {
-    savol: "Nam havoda tajriba nega sustlashadi?",
+    savol: "Nega nam havoda elektrostatik ta'sir kamayishi mumkin?",
     variantlar: [
-      "Zaryad tezroq tarqaladi",
-      "Protonlar yo‘qoladi",
-      "Shar massasi ortadi",
+      "Elektronlar yo'qoladi",
+      "Gravitatsiya kuchayadi",
+      "Namlik zaryadning tezroq tarqalishiga yordam beradi",
+      "Qog'ozning massasi yo'qoladi",
     ],
-    javob: 0,
+    javob: 2,
   },
 ];
 
 export default function SteamPage() {
   const [ishqalash, setIshqalash] = useState(0);
   const [yaqin, setYaqin] = useState(false);
-  const [javoblar, setJavoblar] = useState<number[]>([]);
+  const [javoblar, setJavoblar] = useState<Record<number, number>>({});
   const [tekshirildi, setTekshirildi] = useState(false);
+  const [ism, setIsm] = useState("");
   const [fikr, setFikr] = useState("");
   const [xulosa, setXulosa] = useState("");
-  const [ism, setIsm] = useState("");
 
-  const zaryadlangan = ishqalash >= 5;
-  const ball = savollar.filter(
-    (s, i) => javoblar[i] === s.javob
-  ).length;
+  const zaryad = Math.min(ishqalash * 10, 100);
+  const tortiladi = yaqin && zaryad >= 40;
+
+  const ball = savollar.reduce(
+    (jami, savol, i) => jami + (javoblar[i] === savol.javob ? 1 : 0),
+    0
+  );
 
   function qaytaBoshlash() {
     setIshqalash(0);
     setYaqin(false);
-  }
-
-  function javobTanlash(i: number, j: number) {
-    const yangi = [...javoblar];
-    yangi[i] = j;
-    setJavoblar(yangi);
+    setJavoblar({});
     setTekshirildi(false);
+    setFikr("");
+    setXulosa("");
   }
 
-  function hisobotYuklash() {
+  function yuklabOlish() {
     const matn = [
-      "FIZIKALAB — STEAM LABORATORIYA",
-      "8-sinf: Jismlarning zaryadlanishi",
+      "FIZIKALAB - STEAM VIRTUAL LABORATORIYA",
+      "8-sinf. Jismlarning zaryadlanishi",
       "",
-      "O‘quvchi: " + ism,
+      "O'quvchi: " + (ism || "Kiritilmagan"),
+      "Ishqalashlar soni: " + ishqalash,
+      "Zaryadlanish ko'rsatkichi: " + zaryad + "%",
+      "Qog'oz tortilishi: " + (tortiladi ? "Kuzatildi" : "Kuzatilmadi"),
       "Test natijasi: " + ball + "/5",
       "",
-      "O‘quvchining fikri:",
+      "O'QUVCHINING FIKRI:",
       fikr,
       "",
-      "O‘quvchining xulosasi:",
+      "O'QUVCHINING XULOSASI:",
       xulosa,
     ].join("\n");
 
-    const blob = new Blob([matn], {
+    const blob = new Blob(["\uFEFF" + matn], {
       type: "text/plain;charset=utf-8",
     });
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "FizikaLab-STEAM-hisobot.txt";
+    a.download = "FizikaLab-8-sinf-STEAM-natija.txt";
     a.click();
     URL.revokeObjectURL(url);
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-sky-100 via-white to-indigo-100 px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="text-center text-3xl font-extrabold text-blue-950">
-          ⚡ FizikaLab — STEAM laboratoriya
-        </h1>
-        <h2 className="mt-3 text-center text-2xl font-bold">
-          Jismlarning zaryadlanishi
-        </h2>
-        <p className="mt-3 text-center text-slate-600">
-          8-sinf | Shar, jun mato va qog‘oz yordamida
-          elektrostatik hodisani o‘rganamiz.
-        </p>
+    <main className="min-h-screen bg-slate-100 p-3 md:p-8 text-slate-900">
+      <div className="mx-auto max-w-6xl space-y-6">
 
-        <section className="mt-7 overflow-hidden rounded-3xl border-4 border-white bg-white shadow-xl">
-          <div className="bg-blue-950 p-4 text-center text-lg font-bold text-white">
+        <header className="rounded-3xl bg-blue-950 p-7 text-center text-white shadow-xl">
+          <h1 className="text-2xl md:text-4xl font-extrabold">
+            ⚗️ FizikaLab — STEAM virtual laboratoriya
+          </h1>
+          <p className="mt-3 text-lg">
+            8-sinf | Jismlarning zaryadlanishi
+          </p>
+        </header>
+
+        <section className="overflow-hidden rounded-3xl bg-white shadow-xl">
+          <div className="bg-blue-900 p-4 text-center text-2xl font-bold text-white">
             🔬 Virtual tajriba stoli
           </div>
 
-          <svg
-            viewBox="0 0 900 480"
-            className="w-full"
-            role="img"
-            aria-label="Jun mato, qizil shar va qog‘oz bo‘laklari bilan elektrostatik tajriba"
-          >
-            <defs>
-              <radialGradient id="sharRangi" cx="32%" cy="25%" r="78%">
-                <stop offset="0" stopColor="#ffb5b5" />
-                <stop offset=".3" stopColor="#ff5252" />
-                <stop offset=".75" stopColor="#d71932" />
-                <stop offset="1" stopColor="#7f1024" />
-              </radialGradient>
-              <linearGradient id="stolRangi" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#d6a273" />
-                <stop offset="1" stopColor="#a86a3b" />
-              </linearGradient>
-              <pattern
-                id="junTolalari"
-                width="15"
-                height="15"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M0 8 Q4 -1 8 8 T16 8 M0 14 Q4 5 8 14 T16 14"
-                  stroke="#8b5a30"
-                  strokeWidth="1.6"
-                  fill="none"
-                />
-              </pattern>
-              <filter id="soya">
-                <feGaussianBlur stdDeviation="7" />
-              </filter>
-            </defs>
-
-            <rect width="900" height="480" fill="#dff3ff" />
-            <rect x="0" y="335" width="900" height="145" fill="url(#stolRangi)" />
-            <rect x="0" y="335" width="900" height="13" fill="#88542f" />
-
-            <text x="170" y="52" textAnchor="middle" fontSize="25" fontWeight="bold" fill="#334155">
-              Jun mato
-            </text>
-            <text x="445" y="52" textAnchor="middle" fontSize="25" fontWeight="bold" fill="#334155">
-              Shar
-            </text>
-            <text x="735" y="52" textAnchor="middle" fontSize="25" fontWeight="bold" fill="#334155">
-              Qog‘oz bo‘laklari
-            </text>
-
-            <ellipse cx="450" cy="343" rx="105" ry="12" fill="#70452b" opacity=".22" filter="url(#soya)" />
-
-            <g
-              style={{
-                transform: `translateX(${ishqalash % 2 ? 55 : 0}px)`,
-                transition: "transform .3s ease",
-              }}
-            >
-              <path
-                d="M80 225 Q75 200 105 194 L255 194 Q275 200 269 225 L260 317 Q250 331 225 326 L95 321 Q78 312 80 225Z"
-                fill="#e9c99c"
-                stroke="#936338"
-                strokeWidth="4"
-              />
-              <path
-                d="M90 213 Q100 200 115 205 L250 205 L249 311 L95 311Z"
-                fill="url(#junTolalari)"
-              />
-              {Array.from({ length: 18 }, (_, i) => (
-                <path
-                  key={i}
-                  d={`M${93 + i * 9} 201 q-7 -12 -12 -6`}
-                  stroke="#b88955"
-                  strokeWidth="2"
-                  fill="none"
-                />
-              ))}
-            </g>
-
-            <g
-              style={{
-                transform: `translateX(${yaqin && zaryadlangan ? 115 : 0}px)`,
-                transition: "transform 1.1s ease",
-              }}
-            >
-              <ellipse
-                cx="445"
-                cy="188"
-                rx="104"
-                ry="135"
-                fill="url(#sharRangi)"
-                stroke="#991b2b"
-                strokeWidth="2"
-              />
-              <ellipse
-                cx="408"
-                cy="124"
-                rx="22"
-                ry="55"
-                fill="white"
-                opacity=".24"
-                transform="rotate(22 408 124)"
-              />
-              <path d="M433 320 L457 320 L445 340Z" fill="#a8172b" />
-              <path
-                d="M445 340 Q470 375 438 404"
-                stroke="#64748b"
-                strokeWidth="3"
-                fill="none"
-              />
-
-              {zaryadlangan &&
-                Array.from({ length: 9 }, (_, i) => (
-                  <text
-                    key={i}
-                    x={378 + (i % 3) * 65}
-                    y={118 + Math.floor(i / 3) * 77}
-                    fontSize="27"
-                    fontWeight="bold"
-                    fill="white"
-                  >
-                    −
-                  </text>
-                ))}
-            </g>
-
-            {Array.from({ length: 9 }, (_, i) => {
-              const x = 660 + (i % 5) * 38;
-              const y = 302 + Math.floor(i / 5) * 22;
-              const tortildi = yaqin && zaryadlangan;
-              return (
-                <g
-                  key={i}
-                  style={{
-                    transform: tortildi
-                      ? `translate(${-85 - (i % 3) * 12}px, ${-65 - (i % 4) * 22}px) rotate(${i * 7 - 20}deg)`
-                      : "none",
-                    transformOrigin: `${x}px ${y}px`,
-                    transition: `transform ${0.8 + i * 0.12}s ease`,
-                  }}
-                >
-                  <path
-                    d={`M${x} ${y} l28 -3 l5 19 l-29 4Z`}
-                    fill={i % 3 === 0 ? "#fff7ed" : "#ffffff"}
-                    stroke="#9ca3af"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d={`M${x + 7} ${y + 7} l16 -2`}
-                    stroke="#cbd5e1"
-                    strokeWidth="1"
-                  />
-                </g>
-              );
-            })}
-          </svg>
-        </section>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <button
-            onClick={() => {
-              setIshqalash((n) => Math.min(n + 1, 10));
-              setYaqin(false);
+          <div
+            className="relative h-[330px] overflow-hidden md:h-[490px]"
+            style={{
+              background:
+                "linear-gradient(180deg,#dceaf3 0%,#f5f2e9 69%,#ad7747 70%,#c58c58 100%)",
             }}
-            className="rounded-2xl bg-orange-500 p-4 font-bold text-white hover:bg-orange-600"
           >
-            🧶 Sharni ishqalash
-          </button>
-          <button
-            onClick={() => setYaqin(true)}
-            className="rounded-2xl bg-blue-700 p-4 font-bold text-white hover:bg-blue-800"
-          >
-            🎈 Qog‘ozga yaqinlashtirish
-          </button>
-          <button
-            onClick={qaytaBoshlash}
-            className="rounded-2xl bg-slate-700 p-4 font-bold text-white hover:bg-slate-800"
-          >
-            🔄 Qayta boshlash
-          </button>
-        </div>
+            <div className="absolute left-0 right-0 top-8 text-center text-sm font-semibold text-slate-500">
+              Sharni jun matoga ishqalang va qog'ozga yaqinlashtiring
+            </div>
 
-        <div className="mt-5 rounded-2xl bg-white p-5 shadow">
-          <p className="font-bold">
-            Ishqalashlar soni: {ishqalash}
-          </p>
-          <div className="mt-3 h-4 overflow-hidden rounded-full bg-slate-200">
+            <div className="absolute bottom-[22%] left-[3%] w-[32%] text-center">
+              <div className="mb-3 text-base font-bold md:text-2xl">
+                Jun mato
+              </div>
+              <div
+                className="relative mx-auto h-24 w-full max-w-[260px] rounded-2xl border-4 border-amber-900 shadow-xl md:h-36"
+                style={{
+                  background:
+                    "repeating-linear-gradient(35deg,#a88866 0px,#e6d4b7 5px,#876744 10px,#d8bea0 15px)",
+                }}
+              >
+                <div className="absolute inset-2 rounded-xl border-4 border-dashed border-amber-200 opacity-70" />
+                <div className="absolute inset-5 rounded-lg border-2 border-dotted border-amber-950 opacity-60" />
+              </div>
+            </div>
+
             <div
-              className="h-full bg-blue-600 transition-all"
-              style={{ width: `${ishqalash * 10}%` }}
-            />
-          </div>
-          <p className="mt-4 text-lg">
-            {!zaryadlangan
-              ? "Jun matoni sharga ishqalang. Ishqalash natijasida elektronlar almashinadi."
-              : !yaqin
-              ? "Shar manfiy zaryadlandi. Endi uni qog‘oz bo‘laklariga yaqinlashtiring."
-              : "Qog‘oz bo‘laklari qutblanish natijasida zaryadlangan sharga tortildi!"}
-          </p>
-          <p className="mt-2 text-sm text-slate-500">
-            Bu soddalashtirilgan model. Ishqalashlar soni haqiqiy elektr zaryadini bildirmaydi.
-          </p>
-        </div>
+              className="absolute bottom-[21%] left-[39%] flex w-[23%] flex-col items-center transition-all duration-700"
+              style={{
+                transform: yaqin ? "translateX(35%)" : "translateX(0)",
+              }}
+            >
+              <div className="mb-3 text-lg font-bold md:text-2xl">
+                Shar
+              </div>
+              <div
+                className="relative h-40 w-28 rounded-[50%] border-2 border-red-800 shadow-2xl md:h-60 md:w-44"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 30% 25%,#ffb0a9 0%,#ff4444 20%,#e31826 65%,#850b17 100%)",
+                }}
+              >
+                <div className="absolute left-[20%] top-[12%] h-[30%] w-[16%] rotate-[-25deg] rounded-full bg-white/40 blur-sm" />
+                {zaryad > 0 && (
+                  <div className="absolute inset-0 flex flex-wrap items-center justify-around text-xl font-black text-white md:text-3xl">
+                    {Array.from({ length: Math.max(2, Math.ceil(zaryad / 12)) }).map(
+                      (_, i) => <span key={i}>−</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="h-4 w-5 bg-red-800" style={{
+                clipPath: "polygon(0 0,100% 0,50% 100%)",
+              }} />
+              <div className="h-12 w-1 rotate-[-15deg] rounded-full bg-slate-600" />
+            </div>
 
-        <section className="mt-8 rounded-3xl bg-white p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-blue-950">
-            🧠 Mustaqil fikrlash uchun 5 ta test
-          </h2>
-
-          {savollar.map((s, i) => (
-            <div key={i} className="mt-6 border-b border-slate-200 pb-5">
-              <p className="mb-3 font-bold">
-                {i + 1}. {s.savol}
-              </p>
-              <div className="grid gap-2">
-                {s.variantlar.map((variant, j) => (
-                  <button
-                    key={j}
-                    onClick={() => javobTanlash(i, j)}
-                    className={`rounded-xl border-2 p-3 text-left transition ${
-                      javoblar[i] === j
-                        ? "border-blue-600 bg-blue-100"
-                        : "border-slate-200 bg-slate-50 hover:bg-sky-50"
-                    }`}
-                  >
-                    {String.fromCharCode(65 + j)}. {variant}
-                  </button>
+            <div className="absolute bottom-[23%] right-[3%] w-[29%] text-center">
+              <div className="mb-6 text-sm font-bold md:text-2xl">
+                Qog'oz bo'laklari
+              </div>
+              <div className="relative h-24">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute h-5 w-7 border border-slate-300 bg-white shadow-md transition-all duration-1000 md:h-7 md:w-10"
+                    style={{
+                      left: `${(i % 4) * 24}%`,
+                      top: `${Math.floor(i / 4) * 25}%`,
+                      transform: tortiladi
+                        ? `translate(${-25 - (i % 3) * 12}px,${-25 - (i % 4) * 12}px) rotate(${i * 17}deg)`
+                        : `rotate(${i * 19}deg)`,
+                    }}
+                  />
                 ))}
               </div>
-              {tekshirildi && (
-                <p
-                  className={`mt-2 font-semibold ${
+            </div>
+
+            {tortiladi && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-xl bg-green-100 px-4 py-2 text-center font-bold text-green-800 shadow">
+                ✅ Qog'oz bo'laklari sharga tortildi!
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-3 p-5 md:grid-cols-3">
+            <button
+              onClick={() => {
+                setIshqalash(v => Math.min(v + 1, 10));
+                setYaqin(false);
+              }}
+              className="rounded-2xl bg-orange-500 p-5 font-bold text-white hover:bg-orange-600"
+            >
+              🧶 Sharni ishqalash
+            </button>
+
+            <button
+              onClick={() => setYaqin(true)}
+              className="rounded-2xl bg-blue-600 p-5 font-bold text-white hover:bg-blue-700"
+            >
+              🎈 Qog'ozga yaqinlashtirish
+            </button>
+
+            <button
+              onClick={qaytaBoshlash}
+              className="rounded-2xl bg-slate-700 p-5 font-bold text-white hover:bg-slate-800"
+            >
+              🔄 Qayta boshlash
+            </button>
+          </div>
+
+          <div className="space-y-3 px-5 pb-6">
+            <div className="flex justify-between font-bold">
+              <span>Ishqalashlar soni: {ishqalash}</span>
+              <span>Zaryadlanish: {zaryad}%</span>
+            </div>
+            <div className="h-5 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                style={{ width: `${zaryad}%` }}
+              />
+            </div>
+            <p className="rounded-xl bg-blue-50 p-4 text-blue-950">
+              {ishqalash === 0
+                ? "1-qadam: Sharni jun matoga bir necha marta ishqalang."
+                : !yaqin
+                ? "2-qadam: Endi zaryadlangan sharni qog'oz bo'laklariga yaqinlashtiring."
+                : tortiladi
+                ? "Kuzatuv: Zaryadlangan shar neytral qog'oz bo'laklarini elektrostatik induksiya tufayli tortadi."
+                : "Kuzatuv: Zaryadlanish yetarli emas. Sharni yana ishqalab ko'ring."}
+            </p>
+            <p className="text-xs text-slate-500">
+              Eslatma: Zaryadlanish foizi va qog'oz harakati o'quv tajribasi uchun shartli modeldir.
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-3xl bg-white p-6 shadow-xl">
+          <h2 className="mb-5 text-2xl font-extrabold text-blue-950">
+            📝 Bilimingizni sinang — 5 ta test
+          </h2>
+
+          <div className="space-y-6">
+            {savollar.map((s, i) => (
+              <div key={i} className="rounded-2xl bg-slate-50 p-5">
+                <h3 className="mb-4 font-bold">
+                  {i + 1}. {s.savol}
+                </h3>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {s.variantlar.map((variant, j) => (
+                    <button
+                      key={j}
+                      onClick={() => {
+                        setJavoblar(old => ({ ...old, [i]: j }));
+                        setTekshirildi(false);
+                      }}
+                      className={`rounded-xl border-2 p-3 text-left transition ${
+                        javoblar[i] === j
+                          ? "border-blue-600 bg-blue-100"
+                          : "border-slate-200 bg-white hover:bg-slate-100"
+                      }`}
+                    >
+                      {String.fromCharCode(65 + j)}. {variant}
+                    </button>
+                  ))}
+                </div>
+                {tekshirildi && (
+                  <p className={`mt-3 font-bold ${
                     javoblar[i] === s.javob
                       ? "text-green-700"
                       : "text-red-600"
-                  }`}
-                >
-                  {javoblar[i] === s.javob
-                    ? "✓ To‘g‘ri!"
-                    : `To‘g‘ri javob: ${s.variantlar[s.javob]}`}
-                </p>
-              )}
-            </div>
-          ))}
+                  }`}>
+                    {javoblar[i] === s.javob
+                      ? "✓ To'g'ri javob!"
+                      : `✗ To'g'ri javob: ${s.variantlar[s.javob]}`}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
 
           <button
-            disabled={savollar.some((_, i) => javoblar[i] === undefined)}
             onClick={() => setTekshirildi(true)}
-            className="mt-5 w-full rounded-xl bg-green-700 p-4 font-bold text-white disabled:opacity-40"
+            disabled={Object.keys(javoblar).length !== savollar.length}
+            className="mt-6 w-full rounded-2xl bg-green-600 p-4 text-xl font-bold text-white disabled:opacity-40"
           >
-            Natijani tekshirish
+            ✅ Test natijasini tekshirish
           </button>
 
           {tekshirildi && (
-            <div className="mt-5 rounded-2xl bg-green-50 p-5 text-center">
-              <p className="text-3xl font-extrabold text-green-800">
-                {ball} / 5
-              </p>
-              <p>To‘g‘ri javoblar soni</p>
+            <div className="mt-5 rounded-2xl bg-green-50 p-5 text-center text-2xl font-extrabold text-green-800">
+              Natija: {ball} / 5 — {ball * 20}%
             </div>
           )}
         </section>
 
-        <section className="mt-8 rounded-3xl bg-white p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-blue-950">
-            ✍️ O‘quvchining fikri va xulosasi
+        <section className="space-y-5 rounded-3xl bg-white p-6 shadow-xl">
+          <h2 className="text-2xl font-extrabold text-blue-950">
+            💡 O'quvchining mustaqil fikri va xulosasi
           </h2>
 
-          <label className="mt-5 block font-semibold">
+          <label className="block font-semibold">
             Ism va familiyangiz
+            <input
+              value={ism}
+              onChange={e => setIsm(e.target.value)}
+              placeholder="Ism va familiyangizni yozing"
+              className="mt-2 w-full rounded-xl border-2 border-slate-200 p-4"
+            />
           </label>
-          <input
-            value={ism}
-            onChange={(e) => setIsm(e.target.value)}
-            placeholder="Ism va familiyangizni yozing"
-            className="mt-2 w-full rounded-xl border p-3"
-          />
 
-          <label className="mt-5 block font-semibold">
-            1. Tajribadan qanday fikrga keldingiz?
+          <label className="block font-semibold">
+            1. Sizning fikringiz
+            <p className="mt-1 text-sm font-normal text-slate-600">
+              Nima uchun qog'oz bo'laklari zaryadlangan sharga tortildi?
+              Tajribani kundalik hayotdagi qaysi hodisaga o'xshatasiz?
+            </p>
+            <textarea
+              value={fikr}
+              onChange={e => setFikr(e.target.value)}
+              rows={5}
+              placeholder="O'z fikringizni yozing..."
+              className="mt-2 w-full rounded-xl border-2 border-slate-200 p-4"
+            />
           </label>
-          <textarea
-            value={fikr}
-            onChange={(e) => setFikr(e.target.value)}
-            rows={4}
-            placeholder="O‘z fikringizni yozing..."
-            className="mt-2 w-full rounded-xl border p-3"
-          />
 
-          <label className="mt-5 block font-semibold">
-            2. Tajribadan qanday ilmiy xulosa chiqardingiz?
+          <label className="block font-semibold">
+            2. Tajribadan chiqargan xulosangiz
+            <p className="mt-1 text-sm font-normal text-slate-600">
+              Ishqalanish orqali zaryadlanish haqida qanday yangi bilim oldingiz?
+            </p>
+            <textarea
+              value={xulosa}
+              onChange={e => setXulosa(e.target.value)}
+              rows={5}
+              placeholder="Mustaqil xulosangizni yozing..."
+              className="mt-2 w-full rounded-xl border-2 border-slate-200 p-4"
+            />
           </label>
-          <textarea
-            value={xulosa}
-            onChange={(e) => setXulosa(e.target.value)}
-            rows={4}
-            placeholder="Ilmiy xulosangizni yozing..."
-            className="mt-2 w-full rounded-xl border p-3"
-          />
 
           <button
-            disabled={
-              !ism.trim() ||
-              !fikr.trim() ||
-              !xulosa.trim() ||
-              !tekshirildi
-            }
-            onClick={hisobotYuklash}
-            className="mt-5 w-full rounded-xl bg-indigo-700 p-4 font-bold text-white disabled:opacity-40"
+            onClick={yuklabOlish}
+            disabled={!ism.trim() || !fikr.trim() || !xulosa.trim() || !tekshirildi}
+            className="w-full rounded-2xl bg-violet-700 p-5 text-lg font-bold text-white hover:bg-violet-800 disabled:opacity-40"
           >
-            📥 Natija, fikr va xulosani yuklab olish
+            📥 Natija, fikr va xulosani yuklab olish (TXT)
           </button>
 
-          <p className="mt-3 text-sm text-slate-500">
-            Hisobot o‘quvchining qurilmasiga TXT fayl sifatida
-            yuklanadi. O‘qituvchiga avtomatik yuborilmaydi.
+          <p className="text-center text-sm text-slate-500">
+            Natijani yuklab olish uchun 5 ta testni yakunlang,
+            ism, fikr va xulosani to'ldiring.
           </p>
         </section>
+
       </div>
     </main>
   );
