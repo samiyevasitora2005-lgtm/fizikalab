@@ -32,6 +32,9 @@ export default function SakkizSinf() {
       icon: "🏆",
       nom: "Sertifikat",
       izoh: "Kursni muvaffaqiyatli yakunlab sertifikatga ega bo‘ling",
+      
+link: "/sinflar/8-sinf/sertifikat",
+
     },
   ];
 
