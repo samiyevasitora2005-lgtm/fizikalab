@@ -10,6 +10,7 @@ export default function SakkizSinf() {
       icon: "🎥",
       nom: "Videodarslar",
       izoh: "Mavzularni tushuntiruvchi videodarslarni tomosha qiling",
+      link: "/sinflar/8-sinf/videodarslar",
     },
     {
       icon: "🧪",
