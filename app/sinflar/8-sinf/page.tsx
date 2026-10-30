@@ -16,6 +16,7 @@ export default function SakkizSinf() {
       icon: "🧪",
       nom: "Virtual laboratoriya",
       izoh: "Fizik tajribalarni interaktiv tarzda bajaring",
+      link: "/sinflar/8-sinf/virtual-laboratoriya",
     },
     {
       icon: "📝",
