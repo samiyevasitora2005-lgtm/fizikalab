@@ -1,10 +1,11 @@
-
 "use client";
 
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
+import { Footer, Navbar } from "../../components/Site";
 
 export default function KirishSahifasi() {
   const router = useRouter();
@@ -21,8 +22,7 @@ export default function KirishSahifasi() {
 
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key =
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
       if (!url || !key) {
         setXabar("Supabase sozlamalari topilmadi.");
@@ -50,173 +50,120 @@ export default function KirishSahifasi() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
+  const inputStyle: CSSProperties = {
     width: "100%",
-    padding: "14px",
-    marginTop: "8px",
-    border: "1px solid #cbd5e1",
-    borderRadius: "10px",
-    fontSize: "16px",
-    background: "white",
-    color: "#0f172a",
-    boxSizing: "border-box",
+    minHeight: 54,
+    padding: "0 18px",
+    marginTop: 8,
+    border: "3px solid #dbe7f5",
+    borderRadius: 18,
+    background: "#f7fbff",
+    color: "var(--ink)",
+    font: "700 17px/1 var(--text)",
+    outlineOffset: 3,
+  };
+
+  const labelStyle: CSSProperties = {
+    display: "block",
+    fontWeight: 800,
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(120deg, #172554, #2563eb)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "20px",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          background: "white",
-          width: "100%",
-          maxWidth: "460px",
-          padding: "35px",
-          borderRadius: "22px",
-          boxShadow: "0 15px 45px #0002",
-        }}
-      >
-        <h1
+    <>
+      <Navbar />
+      <main className="wrap" style={{ paddingBlock: "20px 10px" }}>
+        <div
           style={{
-            textAlign: "center",
-            fontSize: "34px",
-            color: "#1d4ed8",
-            fontWeight: "bold",
+            maxWidth: 520,
+            margin: "0 auto",
+            background: "var(--white)",
+            borderRadius: 36,
+            boxShadow: "0 12px 0 #c9deee",
+            padding: "clamp(22px, 5vw, 40px)",
           }}
         >
-          ⚛️ FizikaLab
-        </h1>
-
-        <h2
-          style={{
-            textAlign: "center",
-            color: "#172554",
-            marginTop: "15px",
-            fontSize: "25px",
-          }}
-        >
-          Akkauntga kirish
-        </h2>
-
-        <p
-          style={{
-            textAlign: "center",
-            color: "#64748b",
-            marginTop: "10px",
-          }}
-        >
-          Fizikani tajriba orqali o‘rganing!
-        </p>
-
-        <form onSubmit={kirish}>
-          <label
-            style={{
-              display: "block",
-              marginTop: "25px",
-              color: "#172554",
-            }}
-          >
-            Email manzilingiz
-          </label>
-
-          <input
-            type="email"
-            placeholder="Emailingizni kiriting"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={inputStyle}
-          />
-
-          <label
-            style={{
-              display: "block",
-              marginTop: "20px",
-              color: "#172554",
-            }}
-          >
-            Parolingiz
-          </label>
-
-          <input
-            type="password"
-            placeholder="Parolingizni kiriting"
-            value={parol}
-            onChange={(e) => setParol(e.target.value)}
-            required
-            style={inputStyle}
-          />
-
-          <button
-            type="submit"
-            disabled={yuklanmoqda}
-            style={{
-              width: "100%",
-              padding: "15px",
-              marginTop: "28px",
-              background: yuklanmoqda
-                ? "#93c5fd"
-                : "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "18px",
-              fontWeight: "bold",
-              cursor: yuklanmoqda
-                ? "not-allowed"
-                : "pointer",
-            }}
-          >
-            {yuklanmoqda
-              ? "Kirilmoqda..."
-              : "Kirish"}
-          </button>
-        </form>
-
-        {xabar && (
-          <div
-            role="alert"
-            style={{
-              marginTop: "20px",
-              padding: "14px",
-              borderRadius: "10px",
-              background: "#fef2f2",
-              color: "#b91c1c",
-              textAlign: "center",
-            }}
-          >
-            {xabar}
+          <div style={{ textAlign: "center", display: "grid", gap: 8, marginBottom: 26 }}>
+            <span
+              style={{
+                justifySelf: "center",
+                background: "var(--mint)",
+                boxShadow: "0 4px 0 var(--mint-e)",
+                padding: "6px 16px",
+                borderRadius: 999,
+                fontWeight: 800,
+                fontSize: 14,
+              }}
+            >
+              qaytganingiz bilan!
+            </span>
+            <h1 style={{ fontSize: "clamp(2rem, 6vw, 2.8rem)" }}>Akkauntga kirish</h1>
+            <p style={{ color: "var(--muted)" }}>Fizikani tajriba orqali o‘rganing!</p>
           </div>
-        )}
 
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: "25px",
-            color: "#334155",
-          }}
-        >
-          Akkauntingiz yo‘qmi?{" "}
-          <Link
-            href="/auth/royxatdan-otish"
-            style={{
-              color: "#2563eb",
-              fontWeight: "bold",
-            }}
-          >
-            Ro‘yxatdan o‘tish
-          </Link>
-        </p>
-      </div>
-    </main>
+          <form onSubmit={kirish} style={{ display: "grid", gap: 18 }}>
+            <label style={labelStyle}>
+              Email manzilingiz
+              <input
+                type="email"
+                placeholder="Emailingizni kiriting"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </label>
+
+            <label style={labelStyle}>
+              Parolingiz
+              <input
+                type="password"
+                placeholder="Parolingizni kiriting"
+                value={parol}
+                onChange={(e) => setParol(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={yuklanmoqda}
+              className="btn blue"
+              style={{ justifyContent: "center", marginTop: 8, opacity: yuklanmoqda ? 0.6 : 1 }}
+            >
+              {yuklanmoqda ? "Kirilmoqda..." : "Kirish"}
+            </button>
+          </form>
+
+          {xabar && (
+            <div
+              role="alert"
+              style={{
+                marginTop: 20,
+                padding: "14px 18px",
+                borderRadius: 18,
+                background: "var(--berry)",
+                color: "var(--ink)",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              {xabar}
+            </div>
+          )}
+
+          <p style={{ textAlign: "center", marginTop: 24 }}>
+            Akkauntingiz yo‘qmi?{" "}
+            <Link
+              href="/auth/royxatdan-otish"
+              style={{ color: "var(--blue)", textDecoration: "underline", fontWeight: 800 }}
+            >
+              Ro‘yxatdan o‘tish
+            </Link>
+          </p>
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }
