@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Effects from "../../../components/Effects";
+import ZaryadSahna from "../../../components/ZaryadSahna";
 import { Footer, Icon, Navbar } from "../../../components/Site";
 
 const col = (c: string): CSSProperties =>
@@ -177,32 +178,6 @@ export default function SteamPage() {
     <>
       <Effects />
       <Navbar active="darslik" />
-      <style>{`
-        @keyframes ishqala {
-          0% { transform: translate(0,0) rotate(0deg); }
-          12% { transform: translate(-100%,-10%) rotate(-12deg); }
-          25% { transform: translate(-120%,0) rotate(-18deg); }
-          38% { transform: translate(-90%,-12%) rotate(-8deg); }
-          50% { transform: translate(-120%,0) rotate(-18deg); }
-          63% { transform: translate(-90%,-12%) rotate(-8deg); }
-          75% { transform: translate(-120%,0) rotate(-18deg); }
-          88% { transform: translate(-100%,-10%) rotate(-12deg); }
-          100% { transform: translate(0,0) rotate(0deg); }
-        }
-        @keyframes junSilkin {
-          0%,100% { transform: rotate(0deg); }
-          25%,75% { transform: rotate(-3deg); }
-          50% { transform: rotate(3deg); }
-        }
-        @keyframes elektron {
-          0% { opacity: 0; transform: translateX(-20px); }
-          50% { opacity: 1; }
-          100% { opacity: 0; transform: translateX(35px); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .steam-anim { animation: none !important; }
-        }
-      `}</style>
       <main className="wrap">
         <div className="page-hero">
           <Link href="/sinflar/8-sinf" className="back">
@@ -223,101 +198,7 @@ export default function SteamPage() {
 
         <div className="mt-10 grid gap-8 pb-10">
           <Panel title="Virtual tajriba stoli" color="sky2">
-            <div
-              className="relative overflow-hidden"
-              style={{
-                height: "clamp(300px, 52vw, 460px)",
-                borderRadius: 28,
-                border: "4px solid #f0d9a8",
-                background:
-                  "linear-gradient(180deg,#dff1ff 0%,#fff6e3 68%,#c28b5c 68%,#a97449 100%)",
-              }}
-            >
-              <div className="absolute left-[3%] top-4 text-sm font-extrabold sm:text-lg">Jun mato</div>
-              <div className="absolute left-[44%] top-4 text-sm font-extrabold sm:text-lg">Shar</div>
-              <div className="absolute right-[3%] top-4 text-sm font-extrabold sm:text-lg">
-                Qog‘oz bo‘laklari
-              </div>
-
-              {/* Jun mato */}
-              <div
-                className="steam-anim absolute bottom-[24%] left-[5%] h-[90px] w-[31%] rounded-2xl border-4 border-amber-900 shadow-2xl md:h-[140px]"
-                style={{
-                  background:
-                    "repeating-linear-gradient(45deg,#8e6b4b 0px,#e4cfb2 5px,#9a7856 11px,#d9bc98 17px)",
-                  animation: jarayon === "ishqalash" ? "junSilkin 0.35s ease-in-out infinite" : "none",
-                }}
-              >
-                <div className="absolute inset-2 rounded-xl border-4 border-dashed border-amber-200 opacity-70" />
-              </div>
-
-              {/* Elektronlar */}
-              {jarayon === "ishqalash" && (
-                <div className="absolute bottom-[52%] left-[27%] z-20 flex gap-3 text-xl font-black sm:text-3xl" style={{ color: "var(--blue)" }}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className="steam-anim" style={{ animation: `elektron 0.65s ${i * 0.12}s infinite` }}>
-                      e⁻
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Shar */}
-              <div
-                className="steam-anim absolute bottom-[22%] left-[40%] z-10 flex w-[23%] flex-col items-center"
-                style={{
-                  animation: jarayon === "ishqalash" ? "ishqala 2.4s ease-in-out" : "none",
-                  transform: jarayon === "qogoz" ? "translateX(55%)" : "translateX(0)",
-                  transition: jarayon === "qogoz" ? "transform 1s ease-in-out" : "none",
-                }}
-              >
-                <div
-                  className="relative h-[130px] w-[90px] rounded-[50%] border-2 border-red-900 shadow-2xl md:h-[220px] md:w-[150px]"
-                  style={{
-                    background:
-                      "radial-gradient(ellipse at 30% 25%,#ffb4a8 0%,#ff4545 23%,#e31828 65%,#8d0717 100%)",
-                  }}
-                >
-                  <div className="absolute left-[18%] top-[12%] h-[32%] w-[17%] rotate-[-25deg] rounded-full bg-white/40 blur-sm" />
-                  {zaryad > 0 && (
-                    <div className="absolute inset-0 flex flex-wrap items-center justify-around p-3 text-xl font-black text-white sm:text-3xl">
-                      {Array.from({ length: Math.max(2, Math.ceil(zaryad / 12)) }).map((_, i) => (
-                        <span key={i}>−</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="h-4 w-5 bg-red-900" style={{ clipPath: "polygon(0 0,100% 0,50% 100%)" }} />
-                <div className="h-10 w-1 -rotate-12 rounded-full bg-slate-600" />
-              </div>
-
-              {/* Qog‘oz bo‘laklari */}
-              <div className="absolute bottom-[24%] right-[3%] h-24 w-[28%]">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute h-5 w-7 border border-slate-300 bg-white shadow-md md:h-7 md:w-10"
-                    style={{
-                      left: `${(i % 4) * 24}%`,
-                      top: `${Math.floor(i / 4) * 28}%`,
-                      transform: tortiladi
-                        ? `translate(${-35 - (i % 3) * 12}px,${-35 - (i % 4) * 14}px) rotate(${i * 17}deg)`
-                        : `rotate(${i * 19}deg)`,
-                      transition: "transform 1.2s ease-in-out",
-                    }}
-                  />
-                ))}
-              </div>
-
-              <div
-                className="absolute bottom-3 left-1/2 w-[95%] -translate-x-1/2 rounded-2xl px-4 py-2 text-center text-sm font-extrabold sm:text-lg"
-                style={{ background: "rgba(255,255,255,.92)" }}
-                role="status"
-                aria-live="polite"
-              >
-                {holat}
-              </div>
-            </div>
+            <ZaryadSahna jarayon={jarayon} zaryad={zaryad} tortiladi={tortiladi} holat={holat} />
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
