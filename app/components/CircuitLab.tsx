@@ -1,0 +1,846 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent as RPointerEvent } from "react";
+import { ALL_ITEMS, R1, R2, simulate, type ItemId, type Wire } from "./circuit";
+
+type Pos = { x: number; y: number };
+type Items = Partial<Record<ItemId, Pos>>;
+type Qator = { u1?: number; i1?: number; u2?: number; i2?: number };
+type Drag =
+  | { kind: "item"; id: ItemId; pid: number; sx: number; sy: number; moved: number; ox: number; oy: number; fromToolbox: boolean }
+  | { kind: "wire"; from: string; pid: number; sx: number; sy: number; moved: number };
+
+const W = 960;
+const H = 600;
+
+const SLOT: Record<ItemId, Pos> = {
+  src: { x: 150, y: 440 },
+  sw: { x: 150, y: 150 },
+  am: { x: 430, y: 140 },
+  vm: { x: 700, y: 130 },
+  l1: { x: 520, y: 390 },
+  l2: { x: 800, y: 390 },
+};
+
+const OFF: Record<ItemId, Record<string, [number, number]>> = {
+  src: { p: [-45, 55], n: [45, 55] },
+  sw: { a: [-62, 0], b: [62, 0] },
+  am: { a: [-30, 48], b: [30, 48] },
+  vm: { a: [-30, 48], b: [30, 48] },
+  l1: { a: [-34, 38], b: [34, 38] },
+  l2: { a: [-34, 38], b: [34, 38] },
+};
+
+const NOMLAR: Record<ItemId, string> = {
+  src: "Tok manbai",
+  sw: "Kalit",
+  am: "Ampermetr",
+  vm: "Voltmetr",
+  l1: "1-lampochka",
+  l2: "2-lampochka",
+};
+
+const RANGLAR: Record<ItemId, string> = {
+  src: "#2f5bff",
+  sw: "#aab2c5",
+  am: "#ff8fa3",
+  vm: "#a78bfa",
+  l1: "#ffd166",
+  l2: "#ffd166",
+};
+
+const WIRE_COLORS = ["#e5231b", "#1f2a44", "#7b5be0", "#e27a1c", "#2fb07a"];
+
+const QADAMLAR = [
+  {
+    t: "Asboblarni stolga qo‘yib, zanjirni yig‘ing: tok manbai → kalit → ampermetr → 1-lampochka → 2-lampochka → tok manbaiga qaytish. Voltmetrni 1-lampochka uchlariga ulang.",
+    h: "Asbobni yuqoridagi qatordan stolga sudrang. Sariq klemmani bosib, boshqa klemmaga sudrab sim ulang.",
+  },
+  {
+    t: "Tok manbaining murvatini 4 V holatiga qo‘ying.",
+    h: "Tok manbaidagi «4» tugmasini bosing.",
+  },
+  {
+    t: "Kalitni ulang. Ikkala lampochka ham yonadi. Ampermetr va voltmetr ko‘rsatishini jadvalga yozing.",
+    h: "Kalit richagini bosib ulang, keyin «Jadvalga yozish» tugmasini bosing.",
+  },
+  {
+    t: "Kalitni uzing. Voltmetr klemmalarini ikkinchi lampochkaning uchlariga ulang.",
+    h: "Kalitni uzing. Voltmetr simlarini 2-lampochka klemmalariga o‘tkazing.",
+  },
+  {
+    t: "Kalitni ulang. Bunda lampochkalar yonadi. Ko‘rsatishlarni jadvalga yozing.",
+    h: "Kalitni ulang va «Jadvalga yozish» tugmasini bosing.",
+  },
+  {
+    t: "Tok manbaining kuchlanishini 6 V holatiga qo‘yib, tajribani 3–5-bandlardagidek takrorlang.",
+    h: "«6» ni tanlang. Voltmetr 1-lampochkada, keyin 2-lampochkada ham yozing.",
+  },
+  {
+    t: "Tajriba natijalarini tahlil qiling va xulosa chiqaring.",
+    h: "Pastdagi maydonga xulosangizni yozing.",
+  },
+];
+
+const col = (c: string): CSSProperties =>
+  ({ "--c": `var(--${c})`, "--e": `var(--${c}-e)` }) as CSSProperties;
+
+function termPos(items: Items, t: string): Pos {
+  const [id, nm] = t.split(":");
+  const it = items[id as ItemId]!;
+  const off = OFF[id as ItemId][nm];
+  return { x: it.x + off[0], y: it.y + off[1] };
+}
+
+export default function CircuitLab() {
+  const [items, setItems] = useState<Items>({});
+  const [wires, setWires] = useState<Wire[]>([]);
+  const [manba, setManba] = useState(0);
+  const [kalit, setKalit] = useState(false);
+  const [bosildi4, setBosildi4] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
+  const [wd, setWd] = useState<{ from: string; x: number; y: number } | null>(null);
+  const [tablica, setTablica] = useState<Record<number, Qator>>({ 4: {}, 6: {} });
+  const [xulosa, setXulosa] = useState("");
+  const [xabar, setXabar] = useState("");
+  const [s1, setS1] = useState(false);
+  const [s4, setS4] = useState(false);
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const itemsRef = useRef<Items>(items);
+  const dragRef = useRef<Drag | null>(null);
+  const nextWire = useRef(1);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  });
+
+  const toSvg = (cx: number, cy: number): Pos => {
+    const r = svgRef.current!.getBoundingClientRect();
+    return { x: ((cx - r.left) * W) / r.width, y: ((cy - r.top) * H) / r.height };
+  };
+
+  function connect(a: string, b: string) {
+    const id = nextWire.current++;
+    setWires((prev) =>
+      prev.some((w) => (w.a === a && w.b === b) || (w.a === b && w.b === a))
+        ? prev
+        : [...prev, { id, a, b }]
+    );
+  }
+
+  useEffect(() => {
+    const nearTerm = (p: Pos, ex: string): string | null => {
+      let best: string | null = null;
+      let bd = 28;
+      const its = itemsRef.current;
+      (Object.keys(its) as ItemId[]).forEach((id) => {
+        Object.keys(OFF[id]).forEach((nm) => {
+          const t = `${id}:${nm}`;
+          if (t === ex) return;
+          const q = termPos(its, t);
+          const dd = Math.hypot(q.x - p.x, q.y - p.y);
+          if (dd < bd) {
+            bd = dd;
+            best = t;
+          }
+        });
+      });
+      return best;
+    };
+
+    const move = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d || e.pointerId !== d.pid || !svgRef.current) return;
+      const p = toSvg(e.clientX, e.clientY);
+      d.moved = Math.max(d.moved, Math.hypot(e.clientX - d.sx, e.clientY - d.sy));
+      if (d.kind === "item") {
+        const id = d.id;
+        const nx = p.x - d.ox;
+        const ny = p.y - d.oy;
+        setItems((prev) => ({ ...prev, [id]: { x: nx, y: ny } }));
+      } else {
+        setWd({ from: d.from, x: p.x, y: p.y });
+      }
+    };
+
+    const up = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d || e.pointerId !== d.pid || !svgRef.current) return;
+      dragRef.current = null;
+      const p = toSvg(e.clientX, e.clientY);
+
+      if (d.kind === "item") {
+        const id = d.id;
+        if (d.fromToolbox && d.moved < 6) {
+          setItems((prev) => ({ ...prev, [id]: SLOT[id] }));
+          return;
+        }
+        const nx = p.x - d.ox;
+        const ny = p.y - d.oy;
+        if (nx < 0 || nx > W || ny < 0 || ny > H) {
+          setItems((prev) => {
+            const n = { ...prev };
+            delete n[id];
+            return n;
+          });
+          setWires((prev) => prev.filter((w) => !w.a.startsWith(id + ":") && !w.b.startsWith(id + ":")));
+          setSel(null);
+        } else {
+          setItems((prev) => ({
+            ...prev,
+            [id]: { x: Math.max(60, Math.min(W - 60, nx)), y: Math.max(70, Math.min(H - 75, ny)) },
+          }));
+        }
+      } else {
+        setWd(null);
+        const target = nearTerm(p, d.from);
+        if (target) {
+          connect(d.from, target);
+          setSel(null);
+        } else if (d.moved < 5) {
+          const from = d.from;
+          setSel((prev) => (prev === from ? null : from));
+        }
+      }
+    };
+
+    const cancel = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (d && e.pointerId === d.pid) {
+        dragRef.current = null;
+        setWd(null);
+      }
+    };
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cancel);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toolDown(e: RPointerEvent, id: ItemId) {
+    if (items[id]) return;
+    e.preventDefault();
+    const p = toSvg(e.clientX, e.clientY);
+    dragRef.current = {
+      kind: "item",
+      id,
+      pid: e.pointerId,
+      sx: e.clientX,
+      sy: e.clientY,
+      moved: 0,
+      ox: 0,
+      oy: 0,
+      fromToolbox: true,
+    };
+    setItems((prev) => ({ ...prev, [id]: { x: p.x, y: p.y } }));
+  }
+
+  function toolKey(e: KeyboardEvent, id: ItemId) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (!items[id]) setItems((prev) => ({ ...prev, [id]: SLOT[id] }));
+    }
+  }
+
+  function itemDown(e: RPointerEvent, id: ItemId) {
+    const it = items[id];
+    if (!it) return;
+    const p = toSvg(e.clientX, e.clientY);
+    dragRef.current = {
+      kind: "item",
+      id,
+      pid: e.pointerId,
+      sx: e.clientX,
+      sy: e.clientY,
+      moved: 0,
+      ox: p.x - it.x,
+      oy: p.y - it.y,
+      fromToolbox: false,
+    };
+  }
+
+  function termDown(e: RPointerEvent, t: string) {
+    e.stopPropagation();
+    if (sel && sel !== t) {
+      connect(sel, t);
+      setSel(null);
+      return;
+    }
+    dragRef.current = { kind: "wire", from: t, pid: e.pointerId, sx: e.clientX, sy: e.clientY, moved: 0 };
+  }
+
+  function wireDel(id: number) {
+    setWires((prev) => prev.filter((w) => w.id !== id));
+  }
+
+  function voltTanla(v: number) {
+    setManba(v);
+    if (v === 4) setBosildi4(true);
+    setXabar(`Tok manbai ${v} V ga qo‘yildi.`);
+  }
+
+  function kalitBos() {
+    setKalit(!kalit);
+    setXabar(kalit ? "Kalit uzildi." : "Kalit ulandi.");
+  }
+
+  function namuna() {
+    setItems({ ...SLOT });
+    const pairs: [string, string][] = [
+      ["src:p", "sw:a"],
+      ["sw:b", "am:a"],
+      ["am:b", "l1:a"],
+      ["l1:b", "l2:a"],
+      ["l2:b", "src:n"],
+      ["vm:a", "l1:a"],
+      ["vm:b", "l1:b"],
+    ];
+    setWires(pairs.map(([a, b]) => ({ id: nextWire.current++, a, b })));
+    setSel(null);
+    setXabar("Namuna zanjir yig‘ildi. Endi o‘zingiz sinab ko‘ring.");
+  }
+
+  function boshidan() {
+    setItems({});
+    setWires([]);
+    setManba(0);
+    setKalit(false);
+    setBosildi4(false);
+    setS1(false);
+    setS4(false);
+    setSel(null);
+    setTablica({ 4: {}, 6: {} });
+    setXabar("Tajriba boshidan boshlandi.");
+  }
+
+  const placed = useMemo(() => ALL_ITEMS.filter((i) => items[i]), [items]);
+  const hammasi = placed.length === ALL_ITEMS.length;
+  const sim = useMemo(
+    () => simulate({ placed, wires, manba, kalit }),
+    [placed, wires, manba, kalit]
+  );
+  const chk = useMemo(
+    () => simulate({ placed, wires, manba: 4, kalit: true }),
+    [placed, wires]
+  );
+  const good =
+    hammasi &&
+    !chk.qisqa &&
+    !chk.amParallel &&
+    Math.abs(chk.tok - 0.2) < 0.015 &&
+    Math.abs(chk.i1 - chk.tok) < 0.015 &&
+    Math.abs(chk.i2 - chk.tok) < 0.015;
+
+  useEffect(() => {
+    if (good && chk.vmLamp === 1) setS1(true);
+    if (good && chk.vmLamp === 2 && tablica[4].u1 !== undefined) setS4(true);
+  }, [good, chk.vmLamp, tablica]);
+
+  function yozish() {
+    if (!hammasi) {
+      setXabar("Avval hamma asboblarni stolga qo‘ying va zanjirni yig‘ing.");
+      return;
+    }
+    if (manba === 0) {
+      setXabar("Tok manbaining kuchlanishini 4 V yoki 6 V ga qo‘ying.");
+      return;
+    }
+    if (!kalit) {
+      setXabar("Avval kalitni ulang.");
+      return;
+    }
+    if (sim.qisqa || sim.tok === 0) {
+      setXabar("Zanjirda tok yo‘q. Ulanishlarni tekshiring.");
+      return;
+    }
+    if (sim.vmLamp === 0) {
+      setXabar("Voltmetr lampochka uchlariga ulanmagan. Uni 1- yoki 2-lampochka klemmalariga ulang.");
+      return;
+    }
+    const lamp = sim.vmLamp;
+    const u = sim.u;
+    const i = sim.tok;
+    setTablica((t) => ({
+      ...t,
+      [manba]: lamp === 1 ? { ...t[manba], u1: u, i1: i } : { ...t[manba], u2: u, i2: i },
+    }));
+    setXabar(`Jadvalga yozildi: ${lamp}-lampochka, ${manba} V.`);
+  }
+
+  const done = [
+    s1,
+    bosildi4,
+    tablica[4].u1 !== undefined,
+    s4,
+    tablica[4].u2 !== undefined,
+    tablica[6].u1 !== undefined && tablica[6].u2 !== undefined,
+    xulosa.trim().length >= 10,
+  ];
+  const joriy = done.findIndex((d) => !d);
+  const tugadi = joriy === -1;
+
+  let maslahat = "";
+  if (sim.qisqa) {
+    maslahat =
+      "Qisqa tutashuv! Tok manbaining ikkala qutbi to‘g‘ridan-to‘g‘ri ulangan. Asbobni zanjirga ketma-ket ulang.";
+  } else if (sim.amParallel) {
+    maslahat =
+      "Ampermetr lampochkaga parallel ulangan, lampochka o‘chib qoldi. Ampermetr zanjirga ketma-ket ulanadi!";
+  } else if (hammasi && kalit && manba > 0 && wires.length > 0 && sim.tok === 0) {
+    maslahat =
+      "Zanjirda tok yo‘q. Zanjir yopiq ekanini va voltmetr ketma-ket ulanmaganini tekshiring.";
+  }
+
+  const f = (n?: number) => (n === undefined ? "" : n.toFixed(2));
+  const th: CSSProperties = { border: "2px solid #dbe7f5", padding: "10px 8px" };
+
+  const ammText = sim.qisqa ? "!!!" : `${sim.tok.toFixed(2)} A`;
+  const vmText = sim.qisqa ? "!!!" : `${sim.u.toFixed(2)} V`;
+
+  const stop = (e: RPointerEvent) => e.stopPropagation();
+
+  const terminals: { t: string }[] = [];
+  (Object.keys(items) as ItemId[]).forEach((id) => {
+    Object.keys(OFF[id]).forEach((nm) => terminals.push({ t: `${id}:${nm}` }));
+  });
+
+  return (
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)]">
+      {/* Topshiriqlar */}
+      <section
+        className="rounded-[32px] bg-white p-6 sm:p-8"
+        style={{ boxShadow: "0 10px 0 #c9deee" }}
+      >
+        <div className="mb-5 flex items-center gap-4">
+          <span
+            className="h-5 w-5 flex-none rounded-full"
+            style={{ background: "var(--orange)", boxShadow: "0 3px 0 var(--orange-e)" }}
+          />
+          <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>Topshiriqlar</h2>
+        </div>
+        <ol className="grid gap-3" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          {QADAMLAR.map((q, i) => {
+            const bajarildi = done[i];
+            const hozir = i === joriy;
+            return (
+              <li
+                key={i}
+                className="flex gap-3 rounded-2xl p-3 leading-6"
+                style={{
+                  background: bajarildi ? "#e3f8ee" : hozir ? "#fff4d6" : "#f4f8fd",
+                  outline: hozir ? "3px solid var(--orange)" : "none",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid h-8 w-8 flex-none place-items-center rounded-full"
+                  style={{
+                    background: bajarildi ? "var(--mint)" : hozir ? "var(--orange)" : "#dbe7f5",
+                    font: "700 17px/1 var(--display)",
+                  }}
+                >
+                  {bajarildi ? "✓" : i + 1}
+                </span>
+                <span>
+                  <span className="sr-only">
+                    {bajarildi ? "Bajarildi. " : hozir ? "Hozirgi qadam. " : ""}
+                  </span>
+                  {q.t}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      {/* Laboratoriya stoli */}
+      <section
+        className="min-w-0 rounded-[32px] bg-white p-4 sm:p-6"
+        style={{ boxShadow: "0 10px 0 #c9deee" }}
+      >
+        <div
+          className="mb-4 rounded-2xl p-4 font-extrabold"
+          style={{ background: tugadi ? "var(--mint)" : "#fff4d6" }}
+          role="status"
+          aria-live="polite"
+        >
+          {tugadi
+            ? "Barakalla! Hamma topshiriq bajarildi."
+            : `${joriy + 1}-qadam: ${QADAMLAR[joriy].h}`}
+        </div>
+
+        {/* Asboblar qatori */}
+        <div className="mb-3 flex flex-wrap gap-2" aria-label="Asboblar">
+          {ALL_ITEMS.map((id) => {
+            const bor = !!items[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-disabled={bor}
+                onPointerDown={(e) => toolDown(e, id)}
+                onKeyDown={(e) => toolKey(e, id)}
+                className="flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold"
+                style={{
+                  background: bor ? "#e8eef6" : "#fff",
+                  border: "3px solid #dbe7f5",
+                  boxShadow: bor ? "none" : "0 4px 0 #c9deee",
+                  opacity: bor ? 0.55 : 1,
+                  cursor: bor ? "default" : "grab",
+                  touchAction: "none",
+                  color: "var(--ink)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 rounded-full"
+                  style={{ background: RANGLAR[id] }}
+                />
+                {NOMLAR[id]}
+                {bor && <span aria-hidden="true">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          width="100%"
+          role="group"
+          aria-label="Laboratoriya stoli"
+          style={{
+            display: "block",
+            touchAction: "none",
+            userSelect: "none",
+            borderRadius: 28,
+            background: "#fff6e3",
+            border: "4px solid #f0d9a8",
+          }}
+        >
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M40 0H0V40" fill="none" stroke="#f0dfb8" strokeWidth="1.5" />
+            </pattern>
+            <radialGradient id="bulbOff" cx="40%" cy="35%" r="70%">
+              <stop offset="0" stopColor="#ffffff" />
+              <stop offset="1" stopColor="#d9e4f2" />
+            </radialGradient>
+            <radialGradient id="bulbOn" cx="40%" cy="35%" r="70%">
+              <stop offset="0" stopColor="#fffbe0" />
+              <stop offset="0.5" stopColor="#ffd84d" />
+              <stop offset="1" stopColor="#ff9f1c" />
+            </radialGradient>
+          </defs>
+          <rect width={W} height={H} fill="url(#grid)" />
+
+          {!placed.length && (
+            <text x={W / 2} y={H / 2} textAnchor="middle" fill="#b59a62" fontSize="28" fontWeight="800">
+              Asboblarni yuqoridan shu yerga sudrang
+            </text>
+          )}
+
+          {/* Asboblar */}
+          {ALL_ITEMS.map((id) => {
+            const it = items[id];
+            if (!it) return null;
+            const g = {
+              transform: `translate(${it.x},${it.y})`,
+              onPointerDown: (e: RPointerEvent) => itemDown(e, id),
+              style: { cursor: "grab" } as CSSProperties,
+            };
+
+            if (id === "src") {
+              return (
+                <g key={id} {...g}>
+                  <rect x={-85} y={-47} width={170} height={110} rx={18} fill="#1a39c4" />
+                  <rect x={-85} y={-55} width={170} height={110} rx={18} fill="#2f5bff" />
+                  <rect x={-72} y={-44} width={62} height={34} rx={8} fill="#10241f" />
+                  <text x={-41} y={-20} textAnchor="middle" fill="#7cfc9b" fontSize="20" fontWeight="800" fontFamily="monospace">
+                    {manba} V
+                  </text>
+                  {[4, 6].map((v, k) => (
+                    <g
+                      key={v}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${v} voltga qo‘yish`}
+                      onPointerDown={stop}
+                      onClick={() => voltTanla(v)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") voltTanla(v);
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <rect
+                        x={-2 + k * 42}
+                        y={-44}
+                        width={36}
+                        height={34}
+                        rx={10}
+                        fill={manba === v ? "#ffd166" : "#ffffff"}
+                        stroke={manba === v ? "#e0a21f" : "none"}
+                        strokeWidth={3}
+                      />
+                      <text x={16 + k * 42} y={-21} textAnchor="middle" fontSize="19" fontWeight="800" fill="#1f2a44">
+                        {v}
+                      </text>
+                    </g>
+                  ))}
+                  <text x={0} y={22} textAnchor="middle" fill="#fff" fontSize="15" fontWeight="800">
+                    TOK MANBAI
+                  </text>
+                  <text x={-45} y={44} textAnchor="middle" fill="#ffd9df" fontSize="20" fontWeight="800">
+                    +
+                  </text>
+                  <text x={45} y={44} textAnchor="middle" fill="#d9e2ff" fontSize="22" fontWeight="800">
+                    −
+                  </text>
+                </g>
+              );
+            }
+
+            if (id === "sw") {
+              const x2 = kalit ? 62 : 38;
+              const y2 = kalit ? 0 : -42;
+              return (
+                <g key={id} {...g}>
+                  <rect x={-72} y={-10} width={144} height={28} rx={10} fill="#7d86a0" />
+                  <rect x={-72} y={-18} width={144} height={28} rx={10} fill="#d9dde8" />
+                  <line x1={-62} y1={0} x2={x2} y2={y2} stroke="#1f2a44" strokeWidth={8} strokeLinecap="round" />
+                  <circle cx={x2} cy={y2} r={8} fill={kalit ? "#2fb07a" : "#e5607c"} />
+                  <g
+                    role="button"
+                    tabIndex={0}
+                    aria-label={kalit ? "Kalitni uzish" : "Kalitni ulash"}
+                    onPointerDown={stop}
+                    onClick={kalitBos}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") kalitBos();
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <line x1={-62} y1={0} x2={x2} y2={y2} stroke="transparent" strokeWidth={34} strokeLinecap="round" />
+                  </g>
+                  <text x={0} y={42} textAnchor="middle" fill="#1f2a44" fontSize="16" fontWeight="800" stroke="#fff6e3" strokeWidth={5} paintOrder="stroke" strokeLinejoin="round">
+                    Kalit (K) · {kalit ? "ulangan" : "uzilgan"}
+                  </text>
+                </g>
+              );
+            }
+
+            if (id === "am" || id === "vm") {
+              const isA = id === "am";
+              return (
+                <g key={id} {...g}>
+                  <rect x={-50} y={-32} width={100} height={80} rx={16} fill={isA ? "#e5607c" : "#7b5be0"} />
+                  <rect x={-50} y={-40} width={100} height={80} rx={16} fill={isA ? "#ff8fa3" : "#a78bfa"} />
+                  <rect x={-38} y={-30} width={76} height={30} rx={8} fill="#10241f" />
+                  <text x={0} y={-9} textAnchor="middle" fill="#7cfc9b" fontSize="17" fontWeight="800" fontFamily="monospace">
+                    {isA ? ammText : vmText}
+                  </text>
+                  <text x={0} y={27} textAnchor="middle" fill="#1f2a44" fontSize="30" fontWeight="800">
+                    {isA ? "A" : "V"}
+                  </text>
+                </g>
+              );
+            }
+
+            const lamp1 = id === "l1";
+            const yor = lamp1 ? (sim.qisqa ? 0 : sim.yorug1) : sim.qisqa ? 0 : sim.yorug2;
+            return (
+              <g key={id} {...g}>
+                {yor > 0 && <circle cx={0} cy={-22} r={62} fill="#ffd166" opacity={0.45 * yor} />}
+                <rect x={-44} y={20} width={88} height={26} rx={8} fill="#4b5563" />
+                <rect x={-44} y={16} width={88} height={26} rx={8} fill="#6b7280" />
+                <rect x={-12} y={2} width={24} height={16} fill="#9ca3af" />
+                <circle cx={0} cy={-22} r={34} fill="url(#bulbOff)" stroke="#aab7c8" strokeWidth={3} />
+                <circle cx={0} cy={-22} r={34} fill="url(#bulbOn)" opacity={yor} />
+                <path
+                  d="M-12 2 L-12 -12 Q-6 -26 0 -12 Q6 -26 12 -12 L12 2"
+                  fill="none"
+                  stroke={yor > 0 ? "#ff7a00" : "#6b7280"}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                />
+                <text x={0} y={68} textAnchor="middle" fill="#1f2a44" fontSize="17" fontWeight="800" stroke="#fff6e3" strokeWidth={5} paintOrder="stroke" strokeLinejoin="round">
+                  {lamp1 ? "L₁ (1-lampochka)" : "L₂ (2-lampochka)"}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Simlar */}
+          {wires.map((w) => {
+            if (!items[w.a.split(":")[0] as ItemId] || !items[w.b.split(":")[0] as ItemId]) return null;
+            const a = termPos(items, w.a);
+            const b = termPos(items, w.b);
+            const d = `M${a.x} ${a.y} C${a.x} ${a.y + 70} ${b.x} ${b.y + 70} ${b.x} ${b.y}`;
+            const mx = (a.x + b.x) / 2;
+            const my = (a.y + b.y) / 2 + 52;
+            return (
+              <g key={w.id}>
+                <path d={d} fill="none" stroke="rgba(31,42,68,.25)" strokeWidth={10} strokeLinecap="round" pointerEvents="none" />
+                <path d={d} fill="none" stroke={WIRE_COLORS[w.id % WIRE_COLORS.length]} strokeWidth={6} strokeLinecap="round" pointerEvents="none" />
+                <g
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Simni o‘chirish"
+                  onPointerDown={stop}
+                  onClick={() => wireDel(w.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") wireDel(w.id);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <circle cx={mx} cy={my} r={13} fill="#fff" stroke="#1f2a44" strokeWidth={2} />
+                  <path d={`M${mx - 5} ${my - 5} L${mx + 5} ${my + 5} M${mx + 5} ${my - 5} L${mx - 5} ${my + 5}`} stroke="#1f2a44" strokeWidth={2.5} strokeLinecap="round" />
+                </g>
+              </g>
+            );
+          })}
+
+          {/* Klemmalar */}
+          {terminals.map(({ t }) => {
+            const p = termPos(items, t);
+            return (
+              <g key={t} onPointerDown={(e) => termDown(e, t)} style={{ cursor: "crosshair" }}>
+                <circle cx={p.x} cy={p.y} r={22} fill="transparent" />
+                {sel === t && <circle cx={p.x} cy={p.y} r={17} fill="none" stroke="#2f5bff" strokeWidth={4} />}
+                <circle cx={p.x} cy={p.y} r={10} fill="#ffc83d" stroke="#8a6a00" strokeWidth={3} />
+              </g>
+            );
+          })}
+
+          {/* Sim tortilayotganda */}
+          {wd && items[wd.from.split(":")[0] as ItemId] && (
+            <line
+              x1={termPos(items, wd.from).x}
+              y1={termPos(items, wd.from).y}
+              x2={wd.x}
+              y2={wd.y}
+              stroke="#2f5bff"
+              strokeWidth={5}
+              strokeDasharray="10 8"
+              strokeLinecap="round"
+              pointerEvents="none"
+            />
+          )}
+        </svg>
+
+        <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>
+          Asbobni sudrab joylashtiring. Sariq klemmani bosib, boshqa klemmaga sudrang (yoki ketma-ket
+          ikkalasini bosing) va sim ulang. Simni o‘chirish uchun o‘rtasidagi ✕ ni bosing. Asbobni
+          stoldan tashqariga sudrasangiz, u olib tashlanadi.
+        </p>
+
+        {maslahat && (
+          <p
+            role="alert"
+            className="mt-4 rounded-2xl p-4 font-extrabold"
+            style={{ background: "var(--berry)" }}
+          >
+            {maslahat}
+          </p>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button type="button" className="btn orange" onClick={yozish}>
+            Jadvalga yozish
+          </button>
+          <button type="button" className="btn sm" style={col("sun")} onClick={namuna}>
+            Yordam: namuna zanjir
+          </button>
+          <button type="button" className="btn sm" style={col("berry")} onClick={boshidan}>
+            Boshidan boshlash
+          </button>
+        </div>
+
+        <p className="mt-4 min-h-6 font-extrabold" role="status" aria-live="polite">
+          {xabar}
+        </p>
+      </section>
+
+      {/* Jadval */}
+      <section
+        className="rounded-[32px] bg-white p-6 sm:p-8 lg:col-span-2"
+        style={{ boxShadow: "0 10px 0 #c9deee" }}
+      >
+        <div className="mb-5 flex items-center gap-4">
+          <span
+            className="h-5 w-5 flex-none rounded-full"
+            style={{ background: "var(--sky2)", boxShadow: "0 3px 0 var(--sky2-e)" }}
+          />
+          <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>Natijalar jadvali</h2>
+        </div>
+        <div className="overflow-x-auto rounded-2xl">
+          <table className="w-full border-collapse text-center">
+            <thead>
+              <tr style={{ background: "var(--orange)" }}>
+                <th style={th} rowSpan={2}>
+                  Murvat holatlari
+                </th>
+                <th style={th} colSpan={2}>
+                  1-lampochka
+                </th>
+                <th style={th} colSpan={2}>
+                  2-lampochka
+                </th>
+              </tr>
+              <tr style={{ background: "var(--sun)" }}>
+                <th style={th}>U₁ (V)</th>
+                <th style={th}>I₁ (A)</th>
+                <th style={th}>U₂ (V)</th>
+                <th style={th}>I₂ (A)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[4, 6].map((v, i) => (
+                <tr key={v}>
+                  <td style={th}>
+                    {i + 1} ({v} V)
+                  </td>
+                  <td style={th}>{f(tablica[v].u1)}</td>
+                  <td style={th}>{f(tablica[v].i1)}</td>
+                  <td style={th}>{f(tablica[v].u2)}</td>
+                  <td style={th}>{f(tablica[v].i2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>
+          Virtual modelda lampochkalar qarshiligi doimiy deb olingan (R₁ = {R1} Ω, R₂ = {R2} Ω).
+        </p>
+
+        <h3 className="mb-3 mt-7 text-2xl">Tajriba xulosasi</h3>
+        <label htmlFor="xulosa" className="sr-only">
+          Tajriba xulosasi
+        </label>
+        <textarea
+          id="xulosa"
+          value={xulosa}
+          onChange={(e) => setXulosa(e.target.value)}
+          placeholder="Tajriba natijasida nimalarni o‘rgandingiz? Xulosangizni yozing..."
+          rows={4}
+          className="w-full p-4"
+          style={{
+            border: "3px solid #dbe7f5",
+            borderRadius: 18,
+            background: "#f7fbff",
+            color: "var(--ink)",
+            font: "700 17px/1.5 var(--text)",
+          }}
+        />
+      </section>
+    </div>
+  );
+}
