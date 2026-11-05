@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, KeyboardEvent, PointerEvent as RPointerEvent } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent as RPointerEvent, ReactNode } from "react";
 import { ALL_ITEMS, R1, R2, simulate, type ItemId, type Wire } from "./circuit";
 
 type Pos = { x: number; y: number };
@@ -39,15 +39,6 @@ const NOMLAR: Record<ItemId, string> = {
   vm: "Voltmetr",
   l1: "1-lampochka",
   l2: "2-lampochka",
-};
-
-const RANGLAR: Record<ItemId, string> = {
-  src: "#2f5bff",
-  sw: "#aab2c5",
-  am: "#ff8fa3",
-  vm: "#a78bfa",
-  l1: "#ffd166",
-  l2: "#ffd166",
 };
 
 const QADAMLAR = [
@@ -151,6 +142,65 @@ function polaritet(items: Items, wires: Wire[]): (t: string) => "p" | "n" | "x" 
     if (a === undefined) return "n";
     return a <= b ? "p" : "n";
   };
+}
+
+// Asboblar qatoridagi kichik rasmchalar
+function Ikon({ id }: { id: ItemId }) {
+  const svg = (children: ReactNode) => (
+    <svg viewBox="0 0 56 48" width={56} height={48} aria-hidden="true" style={{ flex: "none" }}>
+      {children}
+    </svg>
+  );
+  if (id === "src")
+    return svg(
+      <>
+        <rect x={4} y={10} width={48} height={32} rx={7} fill="#1a39c4" />
+        <rect x={4} y={6} width={48} height={32} rx={7} fill="#2f5bff" />
+        <rect x={9} y={11} width={20} height={11} rx={3} fill="#10241f" />
+        <rect x={32} y={11} width={8} height={11} rx={3} fill="#fff" />
+        <rect x={42} y={11} width={8} height={11} rx={3} fill="#ffd166" />
+        <circle cx={16} cy={32} r={4.5} fill="#e5231b" stroke="#1f2a44" strokeWidth={1.5} />
+        <circle cx={40} cy={32} r={4.5} fill="#2f5bff" stroke="#fff" strokeWidth={1.5} />
+      </>
+    );
+  if (id === "sw")
+    return svg(
+      <>
+        <rect x={4} y={28} width={48} height={12} rx={4} fill="#8a5a2b" />
+        <rect x={4} y={25} width={48} height={12} rx={4} fill="#d9a066" />
+        <circle cx={13} cy={31} r={4} fill="#b87333" />
+        <rect x={42} y={27} width={8} height={8} rx={2} fill="#b87333" />
+        <line x1={13} y1={31} x2={38} y2={12} stroke="#c0c6d4" strokeWidth={4} strokeLinecap="round" />
+        <circle cx={38} cy={12} r={4.5} fill="#e5607c" stroke="#1f2a44" strokeWidth={1.5} />
+      </>
+    );
+  if (id === "am" || id === "vm") {
+    const a = id === "am";
+    return svg(
+      <>
+        <rect x={9} y={8} width={38} height={36} rx={8} fill={a ? "#d9506b" : "#6a4bd0"} />
+        <rect x={9} y={4} width={38} height={36} rx={8} fill={a ? "#ff8fa3" : "#a78bfa"} />
+        <rect x={14} y={9} width={28} height={19} rx={4} fill="#fffdf5" stroke="#1f2a44" strokeWidth={1.2} />
+        <path d="M18 24 A11 11 0 0 1 38 24" fill="none" stroke="#1f2a44" strokeWidth={1.2} />
+        <line x1={28} y1={25} x2={34} y2={15} stroke="#e5231b" strokeWidth={2} strokeLinecap="round" />
+        <circle cx={28} cy={25} r={2.2} fill="#1f2a44" />
+        <text x={28} y={20} textAnchor="middle" fontSize={9} fontWeight={800} fill={a ? "#d9506b" : "#6a4bd0"} opacity={0.7}>
+          {a ? "A" : "V"}
+        </text>
+        <rect x={16} y={31} width={24} height={6} rx={2} fill="#10241f" />
+        <circle cx={19} cy={42} r={3.2} fill="#e5231b" stroke="#1f2a44" strokeWidth={1} />
+        <circle cx={37} cy={42} r={3.2} fill="#2f5bff" stroke="#1f2a44" strokeWidth={1} />
+      </>
+    );
+  }
+  return svg(
+    <>
+      <circle cx={28} cy={20} r={14} fill="#ffe27a" stroke="#e0a21f" strokeWidth={2} />
+      <path d="M22 32 L22 22 Q25 14 28 22 Q31 14 34 22 L34 32" fill="none" stroke="#ff7a00" strokeWidth={1.8} strokeLinecap="round" />
+      <rect x={18} y={34} width={20} height={9} rx={3} fill="#6b7280" />
+      <path d="M18 37 H38 M18 40 H38" stroke="#374151" strokeWidth={1} />
+    </>
+  );
 }
 
 export default function CircuitLab() {
@@ -557,7 +607,7 @@ export default function CircuitLab() {
                 aria-disabled={bor}
                 onPointerDown={(e) => toolDown(e, id)}
                 onKeyDown={(e) => toolKey(e, id)}
-                className="flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold"
+                className="flex items-center gap-2 rounded-2xl py-1 pl-2 pr-4 font-extrabold"
                 style={{
                   background: bor ? "#e8eef6" : "#fff",
                   border: "3px solid #dbe7f5",
@@ -568,11 +618,7 @@ export default function CircuitLab() {
                   color: "var(--ink)",
                 }}
               >
-                <span
-                  aria-hidden="true"
-                  className="h-4 w-4 rounded-full"
-                  style={{ background: RANGLAR[id] }}
-                />
+                <Ikon id={id} />
                 {NOMLAR[id]}
                 {bor && <span aria-hidden="true">✓</span>}
               </button>
