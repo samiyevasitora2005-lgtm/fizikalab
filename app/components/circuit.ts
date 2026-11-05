@@ -23,6 +23,8 @@ export type SimIn = {
 export type SimOut = {
   tok: number; // ampermetr ko'rsatishi (A)
   u: number; // voltmetr ko'rsatishi (V)
+  tokS: number; // ampermetr: a→b yo'nalishda ishorali tok (manfiy = teskari ulangan)
+  uS: number; // voltmetr: ishorali kuchlanish (manfiy = teskari ulangan)
   i1: number;
   i2: number;
   yorug1: number; // 0..1
@@ -35,6 +37,8 @@ export type SimOut = {
 const ZERO: SimOut = {
   tok: 0,
   u: 0,
+  tokS: 0,
+  uS: 0,
   i1: 0,
   i2: 0,
   yorug1: 0,
@@ -151,6 +155,11 @@ export function simulate(inp: SimIn): SimOut {
   const volt = (id: ItemId) =>
     placed.has(id) ? Math.abs(V(find(`${id}:a`), x) - V(find(`${id}:b`), x)) : 0;
 
+  const sgn = (x: number) => (Math.abs(x) < 1e-3 ? 0 : x);
+  const vs = (id: ItemId) =>
+    placed.has(id) ? V(find(`${id}:a`), x) - V(find(`${id}:b`), x) : 0;
+  const tokS = placed.has("am") ? sgn(vs("am") / RA) : 0;
+  const uS = placed.has("vm") ? sgn(vs("vm")) : 0;
   const tok = placed.has("am") ? clean(volt("am") / RA) : 0;
   const u = placed.has("vm") ? clean(volt("vm")) : 0;
   const i1 = placed.has("l1") ? clean(volt("l1") / R1) : 0;
@@ -177,6 +186,8 @@ export function simulate(inp: SimIn): SimOut {
   return {
     tok,
     u,
+    tokS,
+    uS,
     i1,
     i2,
     yorug1: Math.min(1, i1 / 0.3),
