@@ -46,7 +46,7 @@ export function Navbar({ active }: { active?: "home" | "darslik" | "oyin" }) {
         <Link href="/sinflar" className={active === "darslik" ? "on" : ""}>Darsliklar</Link>
         <Link href="/sinflar">Videodarslar</Link>
         <Link href="/sinflar">Laboratoriyalar</Link>
-        <Link href="/oyin" className="game">O‘yin</Link>
+        <Link href="/oyin" className="play">O‘yin</Link>
       </nav>
       <Link className="btn blue sm" href="/auth/royxatdan-otish">
         Ro‘yxatdan o‘tish
