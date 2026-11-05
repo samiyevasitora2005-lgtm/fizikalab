@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 const GRADES = [
   { n: 7, c: "berry", open: true },
   { n: 8, c: "blue", open: true },
-  { n: 9, c: "mint", open: false },
-  { n: 10, c: "sun", open: false },
-  { n: 11, c: "grape", open: false },
+  { n: 9, c: "mint", open: true },
+  { n: 10, c: "sun", open: true },
+  { n: 11, c: "grape", open: true },
 ];
 
 export default function SinflarPage() {
