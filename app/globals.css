@@ -56,11 +56,11 @@ a { color: inherit; text-decoration: none; }
 .logo { display: flex; align-items: center; gap: 10px; font: 600 30px/1 var(--display); }
 .logo b { color: var(--blue); font-weight: 600; }
 .face { width: 44px; height: 44px; border-radius: 50%; background: var(--sun); box-shadow: 0 4px 0 var(--sun-e); display: grid; place-items: center; }
-.nav { display: flex; gap: 4px; font-weight: 800; }
+.nav { display: flex; align-items: center; gap: 4px; font-weight: 800; }
 .nav a { padding: 9px 16px; border-radius: 999px; }
 .nav a:hover { background: rgba(255, 255, 255, 0.8); }
 .nav a.on { background: var(--white); box-shadow: 0 3px 0 #c9deee; }
-.nav a.game { background: var(--orange); box-shadow: 0 3px 0 var(--orange-e); }
+.nav a.play { background: var(--orange); box-shadow: 0 3px 0 var(--orange-e); }
 @media (max-width: 980px) { .nav { display: none; } }
 
 /* qahramon bo'lim */
@@ -108,6 +108,7 @@ a { color: inherit; text-decoration: none; }
 .card p { opacity: 0.85; flex: 1; transform: translateZ(18px); }
 .card .go { align-self: flex-end; width: 50px; height: 50px; border-radius: 50%; background: var(--white); display: grid; place-items: center; font-size: 22px; box-shadow: 0 4px 0 rgba(31, 42, 68, 0.18); transform: translateZ(44px); }
 .card .no { position: absolute; right: 22px; top: 20px; background: rgba(255, 255, 255, 0.75); padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 800; transform: translateZ(24px); }
+.card .go, .card .chip { color: var(--ink); }
 
 /* sinflar */
 .grades { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; }
