@@ -1,91 +1,65 @@
-export default function SakkizSinf() {
-  const bolimlar = [
-    {
-      icon: "📚",
-      nom: "Elektron darslik",
-      izoh: "8-sinf fizika mavzularini elektron shaklda o‘rganing",
-    link: "/sinflar/8-sinf/elektron-darslik",
-    },
-    {
-      icon: "🎥",
-      nom: "Videodarslar",
-      izoh: "Mavzularni tushuntiruvchi videodarslarni tomosha qiling",
-      link: "/sinflar/8-sinf/videodarslar",
-    },
-    {
-      icon: "🧪",
-      nom: "Virtual laboratoriya",
-      izoh: "Fizik tajribalarni interaktiv tarzda bajaring",
-      link: "/sinflar/8-sinf/virtual-laboratoriya",
-    },
-    {
-      icon: "📝",
-      nom: "Mavzuga doir topshiriqlar",
-      izoh: "O‘rgangan mavzularingiz bo‘yicha topshiriqlarni bajaring",
-   link: "/sinflar/8-sinf/mavzuga-doir-topshiriqlar",
-},
-    {
-      icon: "⚙️",
-      nom: "STEAM topshirig‘i",
-      izoh: "Bilimlaringizni amaliy va ijodiy loyihalarda qo‘llang",
-      link: "/sinflar/8-sinf/steam",
-    },
-    {
-      icon: "🏆",
-      nom: "Sertifikat",
-      izoh: "Kursni muvaffaqiyatli yakunlab sertifikatga ega bo‘ling",
-      
-link: "/sinflar/8-sinf/sertifikat",
+import type { Metadata } from "next";
+import Link from "next/link";
+import type { CSSProperties } from "react";
+import Effects from "../../components/Effects";
+import { Footer, Icon, Navbar, type IconName } from "../../components/Site";
 
-    },
-  ];
+const SINF = 8;
 
+export const metadata: Metadata = {
+  title: `${SINF}-sinf fizika`,
+  description: `${SINF}-sinf fizika bo‘limlari: elektron darslik, videodarslar, virtual laboratoriya va boshqalar.`,
+};
+
+const SECTIONS: { n: string; title: string; text: string; color: string; icon: IconName; link: string }[] = [
+  { n: "01", title: "Elektron darslik", text: `${SINF}-sinf fizika mavzularini elektron shaklda o‘rganing.`, color: "sun", icon: "book", link: `/sinflar/${SINF}-sinf/elektron-darslik` },
+  { n: "02", title: "Videodarslar", text: "Mavzularni tushuntiruvchi videodarslarni tomosha qiling.", color: "berry", icon: "play", link: `/sinflar/${SINF}-sinf/videodarslar` },
+  { n: "03", title: "Virtual laboratoriya", text: "Fizik tajribalarni interaktiv tarzda bajaring.", color: "mint", icon: "flask", link: `/sinflar/${SINF}-sinf/virtual-laboratoriya` },
+  { n: "04", title: "Mavzuga doir topshiriqlar", text: "O‘rgangan mavzularingiz bo‘yicha topshiriqlarni bajaring.", color: "sky2", icon: "doc", link: `/sinflar/${SINF}-sinf/mavzuga-doir-topshiriqlar` },
+  { n: "05", title: "STEAM topshirig‘i", text: "Bilimlaringizni amaliy va ijodiy loyihalarda qo‘llang.", color: "orange", icon: "gear", link: `/sinflar/${SINF}-sinf/steam` },
+  { n: "06", title: "Sertifikat", text: "Kursni muvaffaqiyatli yakunlab, sertifikatga ega bo‘ling.", color: "grape", icon: "cup", link: `/sinflar/${SINF}-sinf/sertifikat` },
+];
+
+export default function SinfPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-800 to-cyan-700 text-white">
-      <div className="max-w-6xl mx-auto px-5 py-12">
-
-        <div className="text-center mb-12">
-          <div className="text-6xl mb-4">⚛️</div>
-
-          <h1 className="text-4xl md:text-5xl font-bold">
-            8-sinf Fizika
-          </h1>
-
-          <p className="text-blue-100 text-lg mt-4">
-            O‘rganish bo‘limini tanlang
-          </p>
+    <>
+      <Effects />
+      <Navbar active="darslik" />
+      <main className="wrap">
+        <div className="page-hero">
+          <Link href="/sinflar" className="back">
+            <span style={{ display: "inline-flex", transform: "rotate(180deg)" }}>
+              <Icon name="arrow" />
+            </span>
+            Sinflar
+          </Link>
+          <h1>{SINF}-sinf fizika</h1>
+          <p>O‘rganish bo‘limini tanlang.</p>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
-
-          {bolimlar.map((bolim) => (
-            <div
-              key={bolim.nom}
-              className="bg-white text-blue-950 rounded-3xl p-7 text-center shadow-xl"
+        <div className="cards" style={{ marginTop: 30 }}>
+          {SECTIONS.map((s) => (
+            <Link
+              key={s.n}
+              href={s.link}
+              className="card"
+              data-tilt
+              data-rv
+              style={{ "--c": `var(--${s.color})`, "--e": `var(--${s.color}-e)` } as CSSProperties}
             >
-              <div className="text-6xl mb-5">
-                {bolim.icon}
-              </div>
-
-              <h2 className="text-xl md:text-2xl font-bold">
-                {bolim.nom}
-              </h2>
-
-              <p className="text-gray-600 mt-3 min-h-[55px]">
-                {bolim.izoh}
-              </p>
-
-              <a
-  href={bolim.link || "#"}
-  className="mt-5 inline-block bg-cyan-400 hover:bg-cyan-300 text-blue-950 font-bold px-5 py-3 rounded-xl"
->
-  Kirish →
-</a>
-            </div>
+              <span className="no">{s.n}</span>
+              <span className="chip">
+                <Icon name={s.icon} />
+              </span>
+              <h3>{s.title}</h3>
+              <p>{s.text}</p>
+              <span className="go">
+                <Icon name="arrow" />
+              </span>
+            </Link>
           ))}
-
         </div>
-      </div>
-    </main>
+      </main>
+      <Footer />
+    </>
   );
 }
